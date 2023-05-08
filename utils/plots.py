@@ -92,7 +92,7 @@ def plot_skeleton_kpts(im, kpts, steps, orig_shape=None):
     #             [7, 13], [6, 7], [6, 8], [7, 9], [8, 10], [9, 11], [2, 3],
     #             [1, 2], [1, 3], [2, 4], [3, 5], [4, 6], [5, 7]]
 
-    skeleton = [[1, 2], [2, 3], [3, 4]]
+    skeleton = [[2, 3]]
     
     #pose_limb_color = palette[[9, 9, 9, 9, 7, 7, 7, 0, 0, 0, 0, 0, 16, 16, 16, 16, 16, 16, 16]]
     pose_limb_color = palette[[limb[0]-1 for limb in skeleton]]
