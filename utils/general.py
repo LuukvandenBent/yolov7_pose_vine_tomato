@@ -327,13 +327,13 @@ def xywhn2xyxy(x, w=640, h=640, padw=0, padh=0, kpt_label=False):
     y[:, 2] = w * (x[:, 0] + x[:, 2] / 2) + padw  # bottom right x
     y[:, 3] = h * (x[:, 1] + x[:, 3] / 2) + padh  # bottom right y
     if kpt_label:
-        num_kpts = (x.shape[1]-4)//2
+        num_kpts = (x.shape[1]-4)//4
         for kpt in range(num_kpts):
             for kpt_instance in range(y.shape[0]):
-                if y[kpt_instance, 2 * kpt + 4]!=0:
-                    y[kpt_instance, 2*kpt+4] = w * y[kpt_instance, 2*kpt+4] + padw
-                if y[kpt_instance, 2 * kpt + 1 + 4] !=0:
-                    y[kpt_instance, 2*kpt+1+4] = h * y[kpt_instance, 2*kpt+1+4] + padh
+                if y[kpt_instance, 4 * kpt + 4]!=0:
+                    y[kpt_instance, 4*kpt+4] = w * y[kpt_instance, 4*kpt+4] + padw
+                if y[kpt_instance, 4 * kpt + 1 + 4] !=0:
+                    y[kpt_instance, 4*kpt+1+4] = h * y[kpt_instance, 4*kpt+1+4] + padh
     return y
 
 
@@ -371,7 +371,7 @@ def resample_segments(segments, n=1000):
     return segments
 
 
-def scale_coords(img1_shape, coords, img0_shape, ratio_pad=None, kpt_label=False, step=2):
+def scale_coords(img1_shape, coords, img0_shape, ratio_pad=None, kpt_label=False, step=4):
     # Rescale coords (xyxy) from img1_shape to img0_shape
     if ratio_pad is None:  # calculate from img0_shape
         gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain  = old / new
@@ -490,7 +490,7 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
          list of detections, on (n,6) tensor per image [xyxy, conf, cls]
     """
     if nc is None:
-        nc = prediction.shape[2] - 5  if not kpt_label else prediction.shape[2] - 5 - nkpt*3 # number of classes
+        nc = prediction.shape[2] - 5  if not kpt_label else prediction.shape[2] - 5 - nkpt*5 # number of classes
     xc = prediction[..., 4] > conf_thres  # candidates
 
     # Settings

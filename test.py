@@ -146,8 +146,8 @@ def test(data,
 
             # Run NMS
             if kpt_label:
-                num_points = (targets.shape[1]//2 - 1)
-                targets[:, 2:] *= torch.Tensor([width, height]*num_points).to(device)  # to pixels
+                num_points = (targets.shape[1]//2 - 2)
+                targets[:, 2:-2] *= torch.Tensor([width, height]*num_points).to(device)  # to pixels
             else:
                 targets[:, 2:] *= torch.Tensor([width, height, width, height]).to(device)  # to pixels
             lb = [targets[targets[:, 0] == i, 1:] for i in range(nb)] if save_hybrid else []  # for autolabelling
@@ -179,7 +179,7 @@ def test(data,
             predn = pred.clone()
             scale_coords(img[si].shape[1:], predn[:,:4], shapes[si][0], shapes[si][1], kpt_label=False)  # native-space pred
             if kpt_label:
-                scale_coords(img[si].shape[1:], predn[:,6:], shapes[si][0], shapes[si][1], kpt_label=kpt_label, step=3)  # native-space pred
+                scale_coords(img[si].shape[1:], predn[:,6:], shapes[si][0], shapes[si][1], kpt_label=kpt_label, step=5)  # native-space pred
             # Append to text file
             if save_txt:
                 gn = torch.tensor(shapes[si][0])[[1, 0, 1, 0]]  # normalization gain whwh
@@ -272,7 +272,7 @@ def test(data,
             plot_images(img, targets, paths, f, names, kpt_label=kpt_label, nkpt=nkpt, orig_shape=shapes[si])
             f = save_dir / f'{path.stem}_pred.jpg'  # predictions
             #Thread(target=plot_images, args=(img, output_to_target(out), paths, f, names), daemon=True).start()
-            plot_images(img, output_to_target(out), paths, f, names, kpt_label=kpt_label, nkpt=nkpt, steps=3, orig_shape=shapes[si])
+            plot_images(img, output_to_target(out), paths, f, names, kpt_label=kpt_label, nkpt=nkpt, steps=5, orig_shape=shapes[si])
 
     # Compute statistics
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy

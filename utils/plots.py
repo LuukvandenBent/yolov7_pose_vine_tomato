@@ -65,7 +65,7 @@ def butter_lowpass_filtfilt(data, cutoff=1500, fs=50000, order=5):
     return filtfilt(b, a, data)  # forward-backward filter
 
 
-def plot_one_box(x, im, color=None, label=None, line_thickness=3, kpt_label=False, kpts=None, steps=2, orig_shape=None):
+def plot_one_box(x, im, color=None, label=None, line_thickness=3, kpt_label=False, kpts=None, steps=4, orig_shape=None):
     # Plots one bounding box on image 'im' using OpenCV
     assert im.data.contiguous, 'Image not contiguous. Apply np.ascontiguousarray(im) to plot_on_box() input image.'
     tl = line_thickness or round(0.002 * (im.shape[0] + im.shape[1]) / 2) + 1  # line/font thickness
@@ -92,7 +92,7 @@ def plot_skeleton_kpts(im, kpts, steps, orig_shape=None):
     #             [7, 13], [6, 7], [6, 8], [7, 9], [8, 10], [9, 11], [2, 3],
     #             [1, 2], [1, 3], [2, 4], [3, 5], [4, 6], [5, 7]]
 
-    skeleton = [[2, 3]]
+    skeleton = []
     
     #pose_limb_color = palette[[9, 9, 9, 9, 7, 7, 7, 0, 0, 0, 0, 0, 16, 16, 16, 16, 16, 16, 16]]
     pose_limb_color = palette[[limb[0]-1 for limb in skeleton]]
@@ -107,11 +107,14 @@ def plot_skeleton_kpts(im, kpts, steps, orig_shape=None):
         r, g, b = pose_kpt_color[kid]
         x_coord, y_coord = kpts[steps * kid], kpts[steps * kid + 1]
         if not (x_coord % 640 == 0 or y_coord % 640 == 0):
-            if steps == 3:
-                conf = kpts[steps * kid + 2]
+            if steps == 5:
+                conf = kpts[steps * kid + 4]
                 if conf < min_conf:
                     r, g, b = [255, 0, 0]
                     #continue
+            angle_sin, angle_cos = kpts[steps * kid + 2], kpts[steps * kid + 3]
+            angle = np.arctan2(angle_sin,angle_cos)
+            cv2.line(im, (int(x_coord-50*np.cos(angle)), int(y_coord-50*np.sin(angle))), (int(x_coord+50*np.cos(angle)), int(y_coord+50*np.sin(angle))), (int(0), int(255), int(255)), 3)
             cv2.circle(im, (int(x_coord), int(y_coord)), radius, (int(r), int(g), int(b)), -1)
 
     for sk_id, sk in enumerate(skeleton):
@@ -176,7 +179,7 @@ def output_to_target(output):
     return np.array(targets)
 
 
-def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max_size=640, max_subplots=16, kpt_label=True, steps=2, orig_shape=None, nkpt=None):
+def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max_size=640, max_subplots=16, kpt_label=True, steps=4, orig_shape=None, nkpt=None):
     # Plot image grid with labels
 
     if isinstance(images, torch.Tensor):
@@ -217,7 +220,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
             image_targets = targets[targets[:, 0] == i]
             boxes = xywh2xyxy(image_targets[:, 2:6]).T
             classes = image_targets[:, 1].astype('int')
-            labels = image_targets.shape[1] == 6 + nkpt*2 if kpt_label else image_targets.shape[1] == 6   # labels if no conf column
+            labels = image_targets.shape[1] == 6 + nkpt*4 if kpt_label else image_targets.shape[1] == 6   # labels if no conf column
             conf = None if labels else image_targets[:, 6]  # check for confidence presence (label vs pred)
             
             if kpt_label:

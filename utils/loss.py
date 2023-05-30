@@ -135,16 +135,22 @@ class ComputeLoss:
                 lbox += (1.0 - iou).mean()  # iou loss
                 if self.kpt_label:
                     #Direct kpt prediction
-                    pkpt_x = ps[:, 5 + self.nc::3] * 2. - 0.5
-                    pkpt_y = ps[:, 6 + self.nc::3] * 2. - 0.5
-                    pkpt_score = ps[:, 7 + self.nc::3]
+                    pkpt_x = ps[:, 5 + self.nc::5] * 2. - 0.5
+                    pkpt_y = ps[:, 6 + self.nc::5] * 2. - 0.5
+                    pkpt_sin = ps[:, 7 + self.nc::5].sin_()
+                    pkpt_cos = ps[:, 7 + self.nc::5].cos_()#7 on purpose
+                    pkpt_score = ps[:, 9 + self.nc::5]
                     #mask
-                    kpt_mask = (tkpt[i][:, 0::2] != 0)
+                    kpt_mask = (tkpt[i][:, 0::4] != 0)
                     lkptv += self.BCEcls(pkpt_score, kpt_mask.float()) 
                     #l2 distance based loss
                     #lkpt += (((pkpt-tkpt[i])*kpt_mask)**2).mean()  #Try to make this loss based on distance instead of ordinary difference
                     #oks based loss
-                    d = (pkpt_x-tkpt[i][:,0::2])**2 + (pkpt_y-tkpt[i][:,1::2])**2
+                    d_angle = (pkpt_sin-tkpt[i][:,2::4])**2 + (pkpt_cos-tkpt[i][:,3::4])**2
+                    d_angle_rotated_180 = (-pkpt_sin-tkpt[i][:,2::4])**2 + (-pkpt_cos-tkpt[i][:,3::4])**2
+                    d_angle_min = torch.minimum(d_angle, d_angle_rotated_180)
+                    d = (pkpt_x-tkpt[i][:,0::4])**2 + (pkpt_y-tkpt[i][:,1::4])**2
+                    d = 0.5*d + 0.5*d_angle_min
                     s = torch.prod(tbox[i][:,-2:], dim=1, keepdim=True)
                     kpt_loss_factor = (torch.sum(kpt_mask != 0) + torch.sum(kpt_mask == 0))/torch.sum(kpt_mask != 0)
                     #lkpt += kpt_loss_factor*((1 - torch.exp(-d/(s*(4*sigmas**2)+1e-9)))*kpt_mask).mean() #original
@@ -184,7 +190,7 @@ class ComputeLoss:
         # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
         na, nt = self.na, targets.shape[0]  # number of anchors, targets
         tcls, tbox, tkpt, indices, anch = [], [], [], [], []
-        gain_length = 7 + 2 * self.nkpt if self.kpt_label else 7
+        gain_length = 7 + 4 * self.nkpt if self.kpt_label else 7
         gain = torch.ones(gain_length, device=targets.device)  # normalized to gridspace gain
         ai = torch.arange(na, device=targets.device).float().view(na, 1).repeat(1, nt)  # same as .repeat_interleave(nt)
         targets = torch.cat((targets.repeat(na, 1, 1), ai[:, :, None]), 2)  # append anchor indices
@@ -198,7 +204,9 @@ class ComputeLoss:
         for i in range(self.nl):
             anchors = self.anchors[i]
             if self.kpt_label:
-                gain[2:gain_length-1] = torch.tensor(p[i].shape)[(2 + self.nkpt)*[3, 2]]  # xyxy gain
+                gain[2:gain_length-1] = torch.tensor(p[i].shape)[(2 + 2*self.nkpt)*[3, 2]]  # xyxy gain
+                gain[gain_length-3:] = 1
+
             else:
                 gain[2:gain_length-1] = torch.tensor(p[i].shape)[[3, 2, 3, 2]]  # xyxy gain
 
@@ -236,8 +244,8 @@ class ComputeLoss:
             tbox.append(torch.cat((gxy - gij, gwh), 1))  # box
             if self.kpt_label:
                 for kpt in range(self.nkpt):
-                    t[:, 6+2*kpt: 6+2*(kpt+1)][t[:,6+2*kpt: 6+2*(kpt+1)] !=0] -= gij[t[:,6+2*kpt: 6+2*(kpt+1)] !=0]
-                tkpt.append(t[:, 6:-1])
+                    t[:, 6+4*kpt: 6+4*(kpt+1)-2][t[:,6+4*kpt: 6+4*(kpt+1)-2] !=0] -= gij[t[:,6+4*kpt: 6+4*(kpt+1)-2] !=0]
+                tkpt.append(t[:, 6:-1])#todo -1 needed?
             anch.append(anchors[a])  # anchors
             tcls.append(c)  # class
 
