@@ -635,11 +635,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                     labels[:, 1] = 1 - labels[:, 1]
                     if self.kpt_label:
                         labels[:, 5::4] = (1 - labels[:, 5::4])*(labels[:, 5::4]!=0)
-                        labels[:, 5::4] = labels[:, 5::4][:, self.flip_index]
-                        labels[:, 6::4] = labels[:, 6::4][:, self.flip_index]
-                        
                         labels[:, 8::4] = (-labels[:, 8::4])
-                        labels[:, 7::4] = labels[:, 7::4][:, self.flip_index]
 
         num_kpts = (labels.shape[1]-5)//4
         labels_out = torch.zeros((nL, 6+4*num_kpts)) if self.kpt_label else torch.zeros((nL, 6))
