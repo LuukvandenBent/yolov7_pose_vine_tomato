@@ -137,8 +137,8 @@ class ComputeLoss:
                     #Direct kpt prediction
                     pkpt_x = ps[:, 5 + self.nc::5] * 2. - 0.5
                     pkpt_y = ps[:, 6 + self.nc::5] * 2. - 0.5
-                    pkpt_sin = ps[:, 7 + self.nc::5].sin_()
-                    pkpt_cos = ps[:, 7 + self.nc::5].cos_()#7 on purpose
+                    pkpt_sin = ps[:, 7 + self.nc::5]
+                    pkpt_cos = ps[:, 8 + self.nc::5]
                     pkpt_score = ps[:, 9 + self.nc::5]
                     #mask
                     kpt_mask = (tkpt[i][:, 0::4] != 0)
@@ -147,10 +147,10 @@ class ComputeLoss:
                     #lkpt += (((pkpt-tkpt[i])*kpt_mask)**2).mean()  #Try to make this loss based on distance instead of ordinary difference
                     #oks based loss
                     d_angle = (pkpt_sin-tkpt[i][:,2::4])**2 + (pkpt_cos-tkpt[i][:,3::4])**2
-                    d_angle_rotated_180 = (-pkpt_sin-tkpt[i][:,2::4])**2 + (-pkpt_cos-tkpt[i][:,3::4])**2
-                    d_angle_min = torch.minimum(d_angle, d_angle_rotated_180)
+                    #d_angle_rotated_180 = (-pkpt_sin-tkpt[i][:,2::4])**2 + (-pkpt_cos-tkpt[i][:,3::4])**2
+                    #d_angle_min = torch.minimum(d_angle, d_angle_rotated_180)
                     d = (pkpt_x-tkpt[i][:,0::4])**2 + (pkpt_y-tkpt[i][:,1::4])**2
-                    d = 0.5*d + 0.5*d_angle_min
+                    d = 0.5*d + 0.5*d_angle#_min
                     s = torch.prod(tbox[i][:,-2:], dim=1, keepdim=True)
                     kpt_loss_factor = (torch.sum(kpt_mask != 0) + torch.sum(kpt_mask == 0))/torch.sum(kpt_mask != 0)
                     #lkpt += kpt_loss_factor*((1 - torch.exp(-d/(s*(4*sigmas**2)+1e-9)))*kpt_mask).mean() #original

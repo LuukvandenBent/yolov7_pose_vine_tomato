@@ -284,8 +284,8 @@ class IKeypoint(nn.Module):
                     if self.nkpt != 0:
                         x_kpt[..., 0::5] = (x_kpt[..., ::5] * 2. - 0.5 + kpt_grid_x.repeat(1,1,1,1,self.nkpt)) * self.stride[i]  # xy
                         x_kpt[..., 1::5] = (x_kpt[..., 1::5] * 2. - 0.5 + kpt_grid_y.repeat(1,1,1,1,self.nkpt)) * self.stride[i]  # xy
-                        x_kpt[..., 2::5] = torch.sin(x_kpt[..., 2::5])
-                        x_kpt[..., 3::5] = torch.cos(x_kpt[..., 2::5])#2 on purpose
+                        x_kpt[..., 2::5] = x_kpt[..., 2::5]
+                        x_kpt[..., 3::5] = x_kpt[..., 3::5]
                         #x_kpt[..., 0::3] = (x_kpt[..., ::3] + kpt_grid_x.repeat(1,1,1,1,17)) * self.stride[i]  # xy
                         #x_kpt[..., 1::3] = (x_kpt[..., 1::3] + kpt_grid_y.repeat(1,1,1,1,17)) * self.stride[i]  # xy
                         #print('=============')
