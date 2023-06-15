@@ -637,6 +637,16 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                         labels[:, 5::4] = (1 - labels[:, 5::4])*(labels[:, 5::4]!=0)
                         labels[:, 8::4] = (-labels[:, 8::4])
 
+        #Check if the angle is still between 0-pi, if not make it
+        for z in range(len(labels)):
+            sin = labels[z, 7]
+            cos = labels[z, 8]
+            angle = np.arctan2(sin,cos)
+            if angle < 0:
+                angle += np.pi
+                labels[z, 7] = np.sin(angle)
+                labels[z, 8] = np.cos(angle)
+
         num_kpts = (labels.shape[1]-5)//4
         labels_out = torch.zeros((nL, 6+4*num_kpts)) if self.kpt_label else torch.zeros((nL, 6))
         if nL:
