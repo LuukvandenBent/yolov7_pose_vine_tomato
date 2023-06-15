@@ -1010,8 +1010,10 @@ def random_perspective(img, targets=(), segments=(), degrees=10, translate=.1, s
                 
                 sincos_kpts = np.zeros((n * nkpt, 3))
                 sincos_kpts[:, :2] = targets[:,7:].reshape(n*nkpt, 2)
+                sincos_kpts[:, [0, 1]] = sincos_kpts[:, [1, 0]]#Switch since we need cossin (xy) and not sincos (yx)
                 sincos_kpts = sincos_kpts @ M.T # transform
                 sincos_kpts = (sincos_kpts[:, :2] / sincos_kpts[:, 2:3] if perspective else sincos_kpts[:, :2])# perspective rescale or affine
+                sincos_kpts[:, [0, 1]] = sincos_kpts[:, [1, 0]]#Switch back
                 sincos_kpts[:, :2] = sincos_kpts[:, :2] / np.sqrt(sincos_kpts[:, 0]**2 + sincos_kpts[:, 1]**2)[:, np.newaxis]#Make unit vector again
                 sincos_kpts = sincos_kpts.reshape(n, nkpt*2)                
 
