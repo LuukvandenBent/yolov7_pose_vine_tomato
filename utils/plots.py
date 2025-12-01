@@ -85,49 +85,43 @@ def plot_one_box(x, im, color=None, label=None, line_thickness=3, kpt_label=Fals
 
 
 def plot_skeleton_kpts(im, kpts, steps, orig_shape=None):
-    #Plot the skeleton and keypointsfor coco datatset
-    palette = np.array([[255, 128, 0], [255, 153, 255], [102, 205, 102], [0, 0, 255]])
+    # Plot only keypoints
+    palette = np.array([
+        [255, 128, 0],
+        [255, 153, 255],
+        [102, 205, 102],
+        [0, 0, 255]
+    ])
 
-    # skeleton = [[16, 14], [14, 12], [17, 15], [15, 13], [12, 13], [6, 12],
-    #             [7, 13], [6, 7], [6, 8], [7, 9], [8, 10], [9, 11], [2, 3],
-    #             [1, 2], [1, 3], [2, 4], [3, 5], [4, 6], [5, 7]]
-
-    skeleton = [[2, 3]]
-    
-    #pose_limb_color = palette[[9, 9, 9, 9, 7, 7, 7, 0, 0, 0, 0, 0, 16, 16, 16, 16, 16, 16, 16]]
-    pose_limb_color = palette[[limb[0]-1 for limb in skeleton]]
-    #pose_kpt_color = palette[[16, 16, 16, 16, 16, 0, 0, 0, 0, 0, 0, 9, 9, 9, 9, 9, 9]]
-    #pose_kpt_color = palette[[16, 0, 9, 1]]
+    h, w = im.shape[:2]     # ← derive image bounds
     radius = 4
     min_conf = 0.2
     num_kpts = len(kpts) // steps
-    pose_kpt_color = palette[list(range(num_kpts))]
+
+    # Assign colors per keypoint
+    pose_kpt_color = palette[(np.arange(num_kpts) % len(palette))]
 
     for kid in range(num_kpts):
         r, g, b = pose_kpt_color[kid]
-        x_coord, y_coord = kpts[steps * kid], kpts[steps * kid + 1]
-        if not (x_coord % 640 == 0 or y_coord % 640 == 0):
-            if steps == 3:
-                conf = kpts[steps * kid + 2]
-                if conf < min_conf:
-                    r, g, b = [255, 0, 0]
-                    #continue
-            cv2.circle(im, (int(x_coord), int(y_coord)), radius, (int(r), int(g), int(b)), -1)
+        x = kpts[kid * steps]
+        y = kpts[kid * steps + 1]
 
-    for sk_id, sk in enumerate(skeleton):
-        r, g, b = pose_limb_color[sk_id]
-        pos1 = (int(kpts[(sk[0]-1)*steps]), int(kpts[(sk[0]-1)*steps+1]))
-        pos2 = (int(kpts[(sk[1]-1)*steps]), int(kpts[(sk[1]-1)*steps+1]))
+        # filter invalid coordinates
+        if x <= 0 or y <= 0:
+            continue
+        if x >= w or y >= h:     # ← use image width/height instead of 640
+            continue
+
+        # confidence thresholding
         if steps == 3:
-            conf1 = kpts[(sk[0]-1)*steps+2]
-            conf2 = kpts[(sk[1]-1)*steps+2]
-            if conf1<min_conf or conf2<min_conf:
-                continue
-        if pos1[0]%640 == 0 or pos1[1]%640==0 or pos1[0]<0 or pos1[1]<0:
-            continue
-        if pos2[0] % 640 == 0 or pos2[1] % 640 == 0 or pos2[0]<0 or pos2[1]<0:
-            continue
-        cv2.line(im, pos1, pos2, (int(r), int(g), int(b)), thickness=2)
+            conf = kpts[kid * steps + 2]
+            if conf < min_conf:
+                r, g, b = [255, 0, 0]  # low confidence color
+
+        cv2.circle(im, (int(x), int(y)), radius, (int(r), int(g), int(b)), -1)
+
+    return im
+
 
 
 def plot_one_box_PIL(box, im, color=None, label=None, line_thickness=None):
